@@ -30,6 +30,10 @@ router.post("/create-checkout", authMiddleware, async (req, res) => {
             await User.findByIdAndUpdate(user._id, { stripeCustomerId: customerId });
         }
 
+        // returnPath lets each page redirect back to itself after payment
+        const { returnPath = "/" } = req.body;
+        const base = process.env.FRONTEND_URL || "http://localhost:3000";
+
         const session = await stripe.checkout.sessions.create({
             customer: customerId,
             payment_method_types: ["card"],
@@ -40,17 +44,17 @@ router.post("/create-checkout", authMiddleware, async (req, res) => {
                         currency: "inr",
                         recurring: { interval: "month" },
                         product_data: {
-                            name: "Reflect AI — Pro Plan",
-                            description: "Live Rooms, AI summaries, recordings & more",
+                            name: "WorkReflect — Pro Plan",
+                            description: "Live Rooms, Reflection Streaks & Gamification, AI summaries & more",
                             images: [],
                         },
-                        unit_amount: 49900, // ₹499 in paise
+                        unit_amount: 15000, // ₹150 in paise
                     },
                     quantity: 1,
                 },
             ],
-            success_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/live-rooms?upgraded=true&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/live-rooms?canceled=true`,
+            success_url: `${base}${returnPath}?upgraded=true&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${base}${returnPath}?canceled=true`,
             metadata: { userId: user._id.toString() },
         });
 

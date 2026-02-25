@@ -198,4 +198,95 @@ router.get("/growth", authMiddleware, adminOnly, async (req, res) => {
     }
 });
 
+// ─── GET /api/analytics/streaks ───────────────────────────────────────────
+// Return per-member streak data + 365-day heatmap grid
+router.get("/streaks", authMiddleware, async (req, res) => {
+    try {
+        const orgId = req.user.organization;
+        const requestingUserId = req.user._id.toString();
+
+        const members = await User.find({ organization: orgId }).select("name email role");
+        const allPosts = await Post.find({ organization: orgId }).select("createdBy createdAt").lean();
+
+        // Helper: ISO date string (YYYY-MM-DD) for a Date
+        const toDay = (d) => new Date(d).toISOString().split("T")[0];
+
+        // Helper: compute streaks from a sorted array of day-strings (ascending)
+        const computeStreaks = (sortedDays) => {
+            if (!sortedDays.length) return { current: 0, longest: 0 };
+            const unique = [...new Set(sortedDays)].sort();
+
+            // Longest streak
+            let longest = 1, run = 1;
+            for (let i = 1; i < unique.length; i++) {
+                const prev = new Date(unique[i - 1]);
+                const curr = new Date(unique[i]);
+                const diff = (curr - prev) / 86400000;
+                if (diff === 1) { run++; if (run > longest) longest = run; }
+                else run = 1;
+            }
+
+            // Current streak (counting back from today)
+            const today = toDay(new Date());
+            let current = 0;
+            let check = new Date();
+            // Allow a grace: if today has no entry yet, start checking from yesterday
+            if (!unique.includes(today)) check.setDate(check.getDate() - 1);
+            while (true) {
+                const key = toDay(check);
+                if (!unique.includes(key)) break;
+                current++;
+                check.setDate(check.getDate() - 1);
+            }
+
+            return { current, longest };
+        };
+
+        // Build 365-day heatmap (last 365 days)
+        const buildHeatmap = (postDays) => {
+            const counts = {};
+            postDays.forEach(d => { counts[d] = (counts[d] || 0) + 1; });
+            const heatmap = [];
+            for (let i = 364; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const key = toDay(d);
+                heatmap.push({ date: key, count: counts[key] || 0 });
+            }
+            return heatmap;
+        };
+
+        const leaderboard = [];
+        let myStats = null;
+
+        for (const member of members) {
+            const uid = member._id.toString();
+            const memberPosts = allPosts.filter(p => p.createdBy.toString() === uid);
+            const postDays = memberPosts.map(p => toDay(p.createdAt)).sort();
+            const { current, longest } = computeStreaks(postDays);
+            const heatmap = buildHeatmap(postDays);
+
+            const entry = {
+                userId: uid,
+                name: member.name,
+                email: member.email,
+                role: member.role,
+                currentStreak: current,
+                longestStreak: longest,
+                totalReflections: memberPosts.length,
+                heatmap,
+            };
+
+            leaderboard.push(entry);
+            if (uid === requestingUserId) myStats = entry;
+        }
+
+        leaderboard.sort((a, b) => b.currentStreak - a.currentStreak || b.totalReflections - a.totalReflections);
+
+        res.json({ leaderboard, myStats });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch streaks", details: err.message });
+    }
+});
+
 module.exports = router;

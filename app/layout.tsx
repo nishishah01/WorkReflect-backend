@@ -3,7 +3,7 @@
 import { clearSession, getToken, getUser } from "@/lib/auth";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import UpgradeModal from "../components/UpgradeModal";
+import UpgradeModal from "../../frontend/app/components/UpgradeModal";
 import "./globals.css";
 
 

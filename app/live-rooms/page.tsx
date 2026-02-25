@@ -3,7 +3,7 @@
 import { getToken } from "@/lib/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import UpgradeModal from "../../components/UpgradeModal";
+import UpgradeModal from "../../../frontend/app/components/UpgradeModal";
 
 
 type Room = {

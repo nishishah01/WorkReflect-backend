@@ -36,6 +36,5 @@ app.use("/api/analytics", require("./routes/analyticsRoutes"));
 app.use("/api/stripe", require("./routes/stripeRoutes"));
 app.use("/api/rooms", require("./routes/roomRoutes"));
 
-app.listen(5000, () => {
-    console.log("🚀 Server running on port 5000");
-});
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
