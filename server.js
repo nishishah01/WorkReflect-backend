@@ -5,7 +5,9 @@ require("dotenv").config();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: "https://workreflect.vercel.app",
+}));
 
 // ⚠️  Stripe webhook needs raw body — register BEFORE express.json()
 app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
