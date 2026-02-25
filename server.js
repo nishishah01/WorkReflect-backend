@@ -5,8 +5,22 @@ require("dotenv").config();
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://workreflect.vercel.app"
+];
+
 app.use(cors({
-    origin: "https://workreflect.vercel.app",
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
 }));
 
 // ⚠️  Stripe webhook needs raw body — register BEFORE express.json()
