@@ -86,17 +86,27 @@ router.post("/react/:id", authMiddleware, async (req, res) => {
 
 //audio upload
 const multer = require("multer");
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
+
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "reflect-ai/audio",
+    resource_type: "video", // Cloudinary uses "video" resource type for audio files
+    allowed_formats: ["mp3", "wav", "ogg", "m4a", "webm"],
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({ storage: cloudinaryStorage });
+
 router.post("/upload-audio", upload.single("audio"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No audio file uploaded" });
+  }
+  // Cloudinary returns the full HTTPS URL in req.file.path
   res.json({
-    audioUrl: `/uploads/${req.file.filename}`,
+    audioUrl: req.file.path,
   });
 });
 

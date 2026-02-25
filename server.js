@@ -29,7 +29,6 @@ const postRoutes = require("./routes/postRoutes");
 app.use("/api/posts", postRoutes);
 const commentRoutes = require("./routes/commentRoutes");
 app.use("/api/comments", commentRoutes);
-app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/org", require("./routes/orgRoutes"));
 app.use("/api/analytics", require("./routes/analyticsRoutes"));
