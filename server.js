@@ -6,22 +6,28 @@ require("dotenv").config();
 const app = express();
 
 const allowedOrigins = [
-  "http://localhost:3000",
-  "https://workreflect.vercel.app"
+    "http://localhost:3000",
+    "https://workreflect.vercel.app"
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (e.g. mobile apps, curl, Render health checks)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            return callback(new Error("Not allowed by CORS"));
+        }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+};
 
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true
-}));
+// ✅ Handle OPTIONS preflight for ALL routes (must come before any route registration)
+app.options("*", cors(corsOptions));
+app.use(cors(corsOptions));
 
 // ⚠️  Stripe webhook needs raw body — register BEFORE express.json()
 app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
