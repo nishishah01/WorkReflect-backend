@@ -26,7 +26,7 @@ const corsOptions = {
 };
 
 // ✅ Handle OPTIONS preflight for ALL routes (must come before any route registration)
-app.options("*", cors(corsOptions));
+app.options(/(.*)/, cors(corsOptions));
 app.use(cors(corsOptions));
 
 // ⚠️  Stripe webhook needs raw body — register BEFORE express.json()
